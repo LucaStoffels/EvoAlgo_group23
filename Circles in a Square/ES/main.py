@@ -45,14 +45,20 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
         self.n_circles = n_circles
         self.fig = None
         self.ax = None
+        self.plot_performance = plot_performance
+        self.data = []
         assert 2 <= n_circles <= 20
+
+        if not output_statistics and plot_performance:
+            print("Cannot plot_performance without having output_statistics enabled")
+            exit(0)
 
         if self.plot_best_sol:
             self.set_up_plot()
@@ -81,6 +87,9 @@ class CirclesInASquare:
         if self.print_sols:
             output += " ({:s})".format(np.array2string(report.best_genotype))
         print(output)
+
+        if self.plot_performance:
+            self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness))
 
         if self.plot_best_sol:
             points = np.reshape(report.best_genotype, (-1, 2))
@@ -136,10 +145,33 @@ class CirclesInASquare:
         if self.plot_best_sol:
             plt.close()
 
+        if self.plot_performance:
+            generations = []
+            best_fitness = []
+            avg_fitness = []
+            std_fitness = []
+            for datapoint in self.data:
+                gen, best, avg, std = datapoint
+                generations.append(gen)
+                best_fitness.append(best)
+                avg_fitness.append(avg)
+                std_fitness.append(std)
+
+            plt.xlabel("Generations")
+
+            target = [self.get_target()] * len(generations)
+
+            plt.plot(generations, best_fitness, label="best")
+            plt.plot(generations, avg_fitness, label="average")
+            plt.plot(generations, std_fitness, label="std")
+            plt.plot(generations, target, label="target")
+            plt.legend(loc="upper right")
+            plt.show()
+
         return best_solution
 
 
 if __name__ == "__main__":
     circles = 10
-    runner = CirclesInASquare(circles, plot_sols=True)
+    runner = CirclesInASquare(circles, plot_performance=True)
     best = runner.run_evolution_strategies()
