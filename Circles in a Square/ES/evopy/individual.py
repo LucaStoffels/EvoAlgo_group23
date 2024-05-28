@@ -59,7 +59,11 @@ class Individual:
         if self.repair == Repair.CONSTRAINT_DOMINATION:
             if self.bounds != None:
                 oob_indices = (self.genotype < self.bounds[0]) | (self.genotype > self.bounds[1])
-                oob_values = np.multiply(self.genotype, oob_indices)
+                left_bound_indices = (self.genotype < self.bounds[0])
+                right_bound_indices = (self.genotype < self.bounds[1])
+                left_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[0]), left_bound_indices)
+                right_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[1]), right_bound_indices)
+                oob_values = np.add(left_oob_values, right_oob_values)
                 penalty = np.sum(np.square(oob_values))
                 self.fitness = fitness_function(self.genotype) - penalty
             else:
