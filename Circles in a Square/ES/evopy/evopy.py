@@ -92,7 +92,7 @@ class EvoPy:
         for generation in range(self.generations):
             children = [parent.reproduce() for _ in range(self.num_children)
                         for parent in population]
-            population = sorted(children, reverse=self.maximize,
+            population = sorted(children + population, reverse=self.maximize,
                                 key=lambda individual: individual.evaluate(self.fitness_function))
             self.evaluations += len(population)
             population = population[:self.population_size]
