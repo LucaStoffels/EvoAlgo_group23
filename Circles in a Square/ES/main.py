@@ -45,7 +45,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=1):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -54,6 +54,9 @@ class CirclesInASquare:
         self.ax = None
         self.plot_performance = plot_performance
         self.data = []
+        self.population_size = population_size
+        self.num_children = num_children
+        self.strategy = strategy
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -138,6 +141,9 @@ class CirclesInASquare:
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
+            population_size=self.population_size,
+            num_children=self.num_children,
+            strategy=self.strategy
         )
 
         best_solution = evopy.run()
@@ -145,6 +151,7 @@ class CirclesInASquare:
         if self.plot_best_sol:
             plt.close()
 
+        final_best = 0
         if self.plot_performance:
             generations = []
             best_fitness = []
@@ -156,6 +163,7 @@ class CirclesInASquare:
                 best_fitness.append(best)
                 avg_fitness.append(avg)
                 std_fitness.append(std)
+                final_best = max(final_best, best)
 
             plt.xlabel("Generations")
 
@@ -168,7 +176,7 @@ class CirclesInASquare:
             plt.legend(loc="upper right")
             plt.show()
 
-        return best_solution
+        return final_best
 
 
 if __name__ == "__main__":
