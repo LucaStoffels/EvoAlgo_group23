@@ -173,6 +173,6 @@ class CirclesInASquare:
 
 
 if __name__ == "__main__":
-    circles = 13
+    circles = 10
     runner = CirclesInASquare(circles, plot_performance=True)
     best = runner.run_evolution_strategies()
