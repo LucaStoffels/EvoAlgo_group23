@@ -45,7 +45,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -143,7 +143,8 @@ class CirclesInASquare:
         best_solution = evopy.run()
 
         if self.plot_best_sol:
-            plt.close()
+             #plt.close()
+            pass
 
         if self.plot_performance:
             generations = []
