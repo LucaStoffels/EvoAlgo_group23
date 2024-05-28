@@ -6,6 +6,7 @@ import numpy as np
 from evopy.individual import Individual
 from evopy.progress_report import ProgressReport
 from evopy.strategy import Strategy
+from evopy.repair import Repair
 from evopy.utils import random_with_seed
 
 
@@ -16,7 +17,7 @@ class EvoPy:
                  population_size=30, num_children=1, mean=0, std=1, maximize=False,
                  strategy=Strategy.SINGLE_VARIANCE, random_seed=None, reporter=None,
                  target_fitness_value=None, target_tolerance=1e-5, max_run_time=None,
-                 max_evaluations=None, bounds=None):
+                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR):
         """Initializes an EvoPy instance.
 
         :param fitness_function: the fitness function on which the individuals are evaluated
@@ -48,6 +49,7 @@ class EvoPy:
         self.std = std
         self.maximize = maximize
         self.strategy = strategy
+        self.repair = repair
         self.random_seed = random_seed
         self.random = random_with_seed(self.random_seed)
         self.reporter = reporter
@@ -124,7 +126,17 @@ class EvoPy:
         # Make sure parameters are within bounds
         if self.bounds is not None:
             oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-            population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+            if self.repair == Repair.RANDOM_REPAIR:
+                population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+            elif self.repair == Repair.BOUNDARY_REPAIR:
+                dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+                dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+                take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+                take_right_bound = np.logical_not(take_left_bound)
+                new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+                population_parameters[oob_indices] = new_oob_values
+
+                
 
         return [
             Individual(
@@ -132,6 +144,8 @@ class EvoPy:
                 parameters,
                 # Set strategy parameters
                 self.strategy, strategy_parameters,
+                # Set repair
+                self.repair,
                 # Set seed and bounds for reproduction
                 random_seed=self.random,
                 bounds=self.bounds

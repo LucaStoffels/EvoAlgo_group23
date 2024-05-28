@@ -2,6 +2,7 @@
 import numpy as np
 
 from evopy.strategy import Strategy
+from evopy.repair import Repair
 from evopy.utils import random_with_seed
 
 
@@ -19,7 +20,7 @@ class Individual:
     _BETA = 0.0873
     _EPSILON = 0.01
 
-    def __init__(self, genotype, strategy, strategy_parameters, bounds=None, random_seed=None):
+    def __init__(self, genotype, strategy, strategy_parameters, repair, bounds=None, random_seed=None):
         """Initialize the Individual.
 
         :param genotype: the genotype of the individual
@@ -36,6 +37,7 @@ class Individual:
         self.bounds = bounds
         self.strategy = strategy
         self.strategy_parameters = strategy_parameters
+        self.repair = repair
         if not isinstance(strategy, Strategy):
             raise ValueError("Provided strategy parameter was not an instance of Strategy.")
         if strategy == Strategy.SINGLE_VARIANCE and len(strategy_parameters) == 1:
@@ -54,7 +56,16 @@ class Individual:
         :param fitness_function: the fitness function to evaluate the individual with
         :return: the value of the fitness function using the individuals genotype
         """
-        self.fitness = fitness_function(self.genotype)
+        if self.repair == Repair.CONSTRAINT_DOMINATION:
+            if self.bounds != None:
+                oob_indices = (self.genotype < self.bounds[0]) | (self.genotype > self.bounds[1])
+                oob_values = np.multiply(self.genotype, oob_indices)
+                penalty = np.sum(np.square(oob_values))
+                self.fitness = fitness_function(self.genotype) - penalty
+            else:
+                self.fitness = fitness_function(self.genotype)
+        else:  
+            self.fitness = fitness_function(self.genotype)
 
         return self.fitness
 
@@ -68,10 +79,18 @@ class Individual:
         new_genotype = self.genotype + self.strategy_parameters[0] * self.random.randn(self.length)
         # Randomly sample out of bounds indices
         oob_indices = (new_genotype < self.bounds[0]) | (new_genotype > self.bounds[1])
-        new_genotype[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+        if self.repair == Repair.RANDOM_REPAIR:
+            new_genotype[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+        elif self.repair == Repair.BOUNDARY_REPAIR:
+            dist_from_left_bound = np.absolute(np.subtract(new_genotype, np.full(new_genotype.shape, self.bounds[0])))
+            dist_from_right_bound = np.absolute(np.subtract(new_genotype, np.full(new_genotype.shape, self.bounds[1])))
+            take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+            take_right_bound = np.logical_not(take_left_bound)
+            new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+            new_genotype[oob_indices] = new_oob_values
         scale_factor = self.random.randn() * np.sqrt(1 / (2 * self.length))
         new_parameters = [max(self.strategy_parameters[0] * np.exp(scale_factor), self._EPSILON)]
-        return Individual(new_genotype, self.strategy, new_parameters, bounds=self.bounds, random_seed=self.random)
+        return Individual(new_genotype, self.strategy, new_parameters, self.repair, bounds=self.bounds, random_seed=self.random)
 
     def _reproduce_multiple_variance(self):
         """Create a single offspring individual from the set genotype and strategy.
@@ -91,7 +110,7 @@ class Individual:
         new_parameters = [max(np.exp(global_scale_factor + scale_factors[i])
                               * self.strategy_parameters[i], self._EPSILON)
                           for i in range(self.length)]
-        return Individual(new_genotype, self.strategy, new_parameters, bounds=self.bounds)
+        return Individual(new_genotype, self.strategy, new_parameters, self.repair, bounds=self.bounds)
 
     # pylint: disable=invalid-name
     def _reproduce_full_variance(self):
@@ -126,4 +145,4 @@ class Individual:
         # Randomly sample out of bounds indices
         oob_indices = (new_genotype < self.bounds[0]) | (new_genotype > self.bounds[1])
         new_genotype[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-        return Individual(new_genotype, self.strategy, new_variances + new_rotations, bounds=self.bounds)
+        return Individual(new_genotype, self.strategy, new_variances + new_rotations, self.repair, bounds=self.bounds)
