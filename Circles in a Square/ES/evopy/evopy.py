@@ -8,6 +8,7 @@ from evopy.progress_report import ProgressReport
 from evopy.strategy import Strategy
 from evopy.repair import Repair
 from evopy.utils import random_with_seed
+from functools import cmp_to_key
 
 
 class EvoPy:
@@ -75,6 +76,20 @@ class EvoPy:
                or (self.max_evaluations is not None
                 and self.evaluations >= self.max_evaluations)
 
+    def cd_comparison(self, individual1: Individual, individual2: Individual):
+        violation1 = individual1.constraint_violation()
+        violation2 = individual2.constraint_violation()
+        fitness1 = individual1.evaluate(self.fitness_function)
+        fitness2 = individual2.evaluate(self.fitness_function)
+        if violation1 == 0 and violation2 == 0:
+            return fitness1 - fitness2
+        elif violation1 != 0 and violation2 == 0:
+            return -1
+        elif violation1 == 0 and violation2 != 0:
+            return 1
+        else:
+            return violation2 - violation1
+
     def run(self):
         """Run the evolutionary strategy algorithm.
 
@@ -92,8 +107,12 @@ class EvoPy:
         for generation in range(self.generations):
             children = [parent.reproduce() for _ in range(self.num_children)
                         for parent in population]
-            population = sorted(children + population, reverse=self.maximize,
-                                key=lambda individual: individual.evaluate(self.fitness_function))
+            if not self.repair == Repair.CONSTRAINT_DOMINATION:
+                population = sorted(children + population, reverse=self.maximize,
+                                    key=lambda individual: individual.evaluate(self.fitness_function))
+            else:
+                population = sorted(children + population, reverse=self.maximize,
+                                    key=cmp_to_key(self.cd_comparison))
             self.evaluations += len(population)
             population = population[:self.population_size]
             best = population[0]

@@ -165,7 +165,7 @@ class CirclesInASquare:
 
             plt.plot(generations, best_fitness, label="best")
             plt.plot(generations, avg_fitness, label="average")
-            plt.plot(generations, std_fitness, label="std")
+            #plt.plot(generations, std_fitness, label="std")
             plt.plot(generations, target, label="target")
             plt.legend(loc="upper right")
             plt.show()
