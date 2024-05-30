@@ -1,6 +1,6 @@
 """Module used for the execution of the evolutionary algorithm."""
 import time
-
+import math
 import numpy as np
 
 from evopy.individual import Individual
@@ -142,21 +142,29 @@ class EvoPy:
             for _ in range(self.population_size)
         ])
 
+        # print(population_parameters)
+        # print("...")
+        self.initialise_population_paremeters()
+
         # Make sure parameters are within bounds
         if self.bounds is not None:
             oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-            if self.repair == Repair.RANDOM_REPAIR:
-                population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-            elif self.repair == Repair.BOUNDARY_REPAIR:
-                dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
-                dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
-                take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
-                take_right_bound = np.logical_not(take_left_bound)
-                new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
-                population_parameters[oob_indices] = new_oob_values
-
-                
-
+            # if self.repair == Repair.RANDOM_REPAIR:
+            #     population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+            # elif self.repair == Repair.BOUNDARY_REPAIR:
+            #     dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+            #     dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+            #     take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+            #     take_right_bound = np.logical_not(take_left_bound)
+            #     new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+            #     population_parameters[oob_indices] = new_oob_values
+            population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+            #population_parameters = self.initialise_population_paremeters()
+            population_parameters = []
+            for i in range(self.population_size):
+                population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
+            #print("population_parameters: " + str(population_parameters))
+       
         return [
             Individual(
                 # Initialize genotype within possible bounds
@@ -170,3 +178,56 @@ class EvoPy:
                 bounds=self.bounds
             ) for parameters in population_parameters
         ]
+
+    def initialise_population_paremeters(self, debug=False):
+        genotype = []
+
+        nr_points_in_square = int(self.individual_length/2)
+        nr_points_in_circle = 0;
+        square_size = 0;
+        while math.sqrt(nr_points_in_square).is_integer() == False:
+            nr_points_in_square -= 1;
+            nr_points_in_circle += 1;
+            if (nr_points_in_square < 1):
+                break;
+        square_size = int(math.sqrt(nr_points_in_square))
+
+        nr_points_in_center = 0;
+        if  nr_points_in_circle > 1 and math.sqrt(nr_points_in_square) % 2 == 0:
+            nr_points_in_center = 1;
+            nr_points_in_circle -= 1;
+
+        square_factor = 0.9
+        square_stepsize = square_factor/(square_size-1)
+        for i in range(square_size):
+            for j in range(square_size):
+                x = ((1-square_factor)/2) + (j)*square_stepsize;
+                y = ((1-square_factor)/2) + (i)*square_stepsize;
+                genotype.append(x)
+                genotype.append(y)
+                
+        if(nr_points_in_circle > 0):
+            circle_step = (2*math.pi)/nr_points_in_circle;
+            scale_factor = square_stepsize/2.2;
+            for i in range(nr_points_in_circle):
+                x = 0.5+math.sin(i*circle_step) * scale_factor;
+                y = 0.5+math.cos(i*circle_step) * scale_factor;
+                genotype.append(x)
+                genotype.append(y)
+            
+        if nr_points_in_center == 1:
+            x = 0.5;
+            y = 0.5;
+            genotype.append(x)
+            genotype.append(y)
+        
+        if(debug):
+            print()
+            print("Starting Grid Generation")
+            print(" * Nr circles in square pattern: " + str(nr_points_in_square))
+            print(" * Nr circles in circle pattern: " + str(nr_points_in_circle))
+            print(" * Nr circles in square pattern: " + str(nr_points_in_center))
+            print(" * Square size: " + str(square_size))
+            print()
+
+        return np.array(genotype)
