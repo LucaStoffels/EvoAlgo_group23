@@ -49,17 +49,17 @@ class Individual:
             self.reproduce = self._reproduce_full_variance
         else:
             raise ValueError("The length of the strategy parameters was not correct.")
+        if self.repair == Repair.CONSTRAINT_DOMINATION:
+            if self.bounds != None:
+                right_bound_indices = (self.genotype > self.bounds[1])
+                left_bound_indices = (self.genotype < self.bounds[0])
+                left_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[0]), left_bound_indices)
+                right_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[1]), right_bound_indices)
+                oob_values = np.add(left_oob_values, right_oob_values)
+                self.constraint_violation = np.sum(np.square(oob_values))
+            else:
+                self.constraint_violation = 0
 
-    def constraint_violation(self):
-        if self.bounds != None:
-            right_bound_indices = (self.genotype > self.bounds[1])
-            left_bound_indices = (self.genotype < self.bounds[0])
-            left_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[0]), left_bound_indices)
-            right_oob_values = np.multiply(np.subtract(self.genotype, self.bounds[1]), right_bound_indices)
-            oob_values = np.add(left_oob_values, right_oob_values)
-            return np.sum(np.square(oob_values))
-        else:
-            return 0
 
     def evaluate(self, fitness_function):
         """Evaluate the genotype of the individual using the provided fitness function.
@@ -69,7 +69,7 @@ class Individual:
         """
         if self.repair == Repair.CONSTRAINT_DOMINATION:
             if self.bounds != None:
-                self.fitness = fitness_function(self.genotype) - self.constraint_violation()
+                self.fitness = fitness_function(self.genotype) - self.constraint_violation
             else:
                 self.fitness = fitness_function(self.genotype)
         else:  

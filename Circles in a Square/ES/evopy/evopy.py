@@ -77,8 +77,8 @@ class EvoPy:
                 and self.evaluations >= self.max_evaluations)
 
     def cd_comparison(self, individual1: Individual, individual2: Individual):
-        violation1 = individual1.constraint_violation()
-        violation2 = individual2.constraint_violation()
+        violation1 = individual1.constraint_violation
+        violation2 = individual2.constraint_violation
         fitness1 = individual1.evaluate(self.fitness_function)
         fitness2 = individual2.evaluate(self.fitness_function)
         if violation1 == 0 and violation2 == 0:
