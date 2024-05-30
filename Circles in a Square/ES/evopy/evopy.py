@@ -18,7 +18,7 @@ class EvoPy:
                  population_size=30, num_children=1, mean=0, std=1, maximize=False,
                  strategy=Strategy.SINGLE_VARIANCE, random_seed=None, reporter=None,
                  target_fitness_value=None, target_tolerance=1e-5, max_run_time=None,
-                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR):
+                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True):
         """Initializes an EvoPy instance.
 
         :param fitness_function: the fitness function on which the individuals are evaluated
@@ -60,6 +60,7 @@ class EvoPy:
         self.max_evaluations = max_evaluations
         self.bounds = bounds
         self.evaluations = 0
+        self.custom_init = custom_init
 
     def _check_early_stop(self, start_time, best):
         """Check whether the algorithm can stop early, based on time and fitness target.
@@ -142,28 +143,23 @@ class EvoPy:
             for _ in range(self.population_size)
         ])
 
-        # print(population_parameters)
-        # print("...")
-        self.initialise_population_paremeters()
-
         # Make sure parameters are within bounds
         if self.bounds is not None:
-            oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-            # if self.repair == Repair.RANDOM_REPAIR:
-            #     population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-            # elif self.repair == Repair.BOUNDARY_REPAIR:
-            #     dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
-            #     dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
-            #     take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
-            #     take_right_bound = np.logical_not(take_left_bound)
-            #     new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
-            #     population_parameters[oob_indices] = new_oob_values
-            population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-            #population_parameters = self.initialise_population_paremeters()
-            population_parameters = []
-            for i in range(self.population_size):
-                population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
-            #print("population_parameters: " + str(population_parameters))
+            if self.custom_init:
+                population_parameters = []
+                for i in range(self.population_size):
+                    population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
+            else:
+                oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
+                if self.repair == Repair.RANDOM_REPAIR:
+                    population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+                elif self.repair == Repair.BOUNDARY_REPAIR:
+                    dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+                    dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+                    take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+                    take_right_bound = np.logical_not(take_left_bound)
+                    new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+                    population_parameters[oob_indices] = new_oob_values
        
         return [
             Individual(
