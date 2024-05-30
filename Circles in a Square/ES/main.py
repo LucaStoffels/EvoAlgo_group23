@@ -2,8 +2,9 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 import math
-from evopy import EvoPy
+from evopy import EvoPy, Strategy
 from evopy import ProgressReport
+from evopy.repair import Repair
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import numpy as np
@@ -138,6 +139,8 @@ class CirclesInASquare:
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
+            repair=Repair.CONSTRAINT_DOMINATION,
+            custom_init=False
         )
 
         best_solution = evopy.run()
@@ -164,7 +167,7 @@ class CirclesInASquare:
 
             plt.plot(generations, best_fitness, label="best")
             plt.plot(generations, avg_fitness, label="average")
-            plt.plot(generations, std_fitness, label="std")
+            #plt.plot(generations, std_fitness, label="std")
             plt.plot(generations, target, label="target")
             plt.legend(loc="upper right")
             plt.show()

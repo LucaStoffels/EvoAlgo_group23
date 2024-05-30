@@ -6,7 +6,9 @@ import numpy as np
 from evopy.individual import Individual
 from evopy.progress_report import ProgressReport
 from evopy.strategy import Strategy
+from evopy.repair import Repair
 from evopy.utils import random_with_seed
+from functools import cmp_to_key
 
 
 class EvoPy:
@@ -16,7 +18,7 @@ class EvoPy:
                  population_size=30, num_children=1, mean=0, std=1, maximize=False,
                  strategy=Strategy.SINGLE_VARIANCE, random_seed=None, reporter=None,
                  target_fitness_value=None, target_tolerance=1e-5, max_run_time=None,
-                 max_evaluations=None, bounds=None):
+                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True):
         """Initializes an EvoPy instance.
 
         :param fitness_function: the fitness function on which the individuals are evaluated
@@ -48,6 +50,7 @@ class EvoPy:
         self.std = std
         self.maximize = maximize
         self.strategy = strategy
+        self.repair = repair
         self.random_seed = random_seed
         self.random = random_with_seed(self.random_seed)
         self.reporter = reporter
@@ -57,6 +60,7 @@ class EvoPy:
         self.max_evaluations = max_evaluations
         self.bounds = bounds
         self.evaluations = 0
+        self.custom_init = custom_init
 
     def _check_early_stop(self, start_time, best):
         """Check whether the algorithm can stop early, based on time and fitness target.
@@ -72,6 +76,20 @@ class EvoPy:
                 and abs(best.fitness - self.target_fitness_value) < self.target_tolerance) \
                or (self.max_evaluations is not None
                 and self.evaluations >= self.max_evaluations)
+
+    def cd_comparison(self, individual1: Individual, individual2: Individual):
+        violation1 = individual1.constraint_violation
+        violation2 = individual2.constraint_violation
+        fitness1 = individual1.evaluate(self.fitness_function)
+        fitness2 = individual2.evaluate(self.fitness_function)
+        if violation1 == 0 and violation2 == 0:
+            return fitness1 - fitness2
+        elif violation1 != 0 and violation2 == 0:
+            return -1
+        elif violation1 == 0 and violation2 != 0:
+            return 1
+        else:
+            return violation2 - violation1
 
     def run(self):
         """Run the evolutionary strategy algorithm.
@@ -90,8 +108,12 @@ class EvoPy:
         for generation in range(self.generations):
             children = [parent.reproduce() for _ in range(self.num_children)
                         for parent in population]
-            population = sorted(children + population, reverse=self.maximize,
-                                key=lambda individual: individual.evaluate(self.fitness_function))
+            if not self.repair == Repair.CONSTRAINT_DOMINATION:
+                population = sorted(children + population, reverse=self.maximize,
+                                    key=lambda individual: individual.evaluate(self.fitness_function))
+            else:
+                population = sorted(children + population, reverse=self.maximize,
+                                    key=cmp_to_key(self.cd_comparison))
             self.evaluations += len(population)
             population = population[:self.population_size]
             best = population[0]
@@ -121,21 +143,23 @@ class EvoPy:
             for _ in range(self.population_size)
         ])
 
-        # print(population_parameters)
-        # print("...")
-        self.initialise_population_paremeters()
-
         # Make sure parameters are within bounds
         if self.bounds is not None:
-            oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-            population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-            #population_parameters = self.initialise_population_paremeters()
-            population_parameters = []
-            for i in range(self.population_size):
-                population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
-            #print("population_parameters: " + str(population_parameters))
-           
-
+            if self.custom_init:
+                population_parameters = []
+                for i in range(self.population_size):
+                    population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
+            else:
+                oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
+                if self.repair == Repair.RANDOM_REPAIR:
+                    population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+                elif self.repair == Repair.BOUNDARY_REPAIR:
+                    dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+                    dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+                    take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+                    take_right_bound = np.logical_not(take_left_bound)
+                    new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+                    population_parameters[oob_indices] = new_oob_values
        
         return [
             Individual(
@@ -143,6 +167,8 @@ class EvoPy:
                 parameters,
                 # Set strategy parameters
                 self.strategy, strategy_parameters,
+                # Set repair
+                self.repair,
                 # Set seed and bounds for reproduction
                 random_seed=self.random,
                 bounds=self.bounds
@@ -200,4 +226,4 @@ class EvoPy:
             print(" * Square size: " + str(square_size))
             print()
 
-        return genotype
+        return np.array(genotype)
