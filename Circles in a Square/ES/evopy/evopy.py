@@ -1,4 +1,5 @@
 """Module used for the execution of the evolutionary algorithm."""
+from ast import If
 import time
 import math
 import numpy as np
@@ -100,7 +101,6 @@ class EvoPy:
             return None
 
         start_time = time.time()
-
         population = self._init_population()
         best = sorted(population, reverse=self.maximize,
                       key=lambda individual: individual.evaluate(self.fitness_function))[0]
@@ -192,9 +192,12 @@ class EvoPy:
         if  nr_points_in_circle > 1 and math.sqrt(nr_points_in_square) % 2 == 0:
             nr_points_in_center = 1;
             nr_points_in_circle -= 1;
-
+            
         square_factor = 0.9
-        square_stepsize = square_factor/(square_size-1)
+        square_stepsize = 0
+        if square_factor > 1:
+            square_stepsize = square_factor/(square_size-1)
+
         for i in range(square_size):
             for j in range(square_size):
                 x = ((1-square_factor)/2) + (j)*square_stepsize;
