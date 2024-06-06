@@ -146,9 +146,12 @@ class EvoPy:
         # Make sure parameters are within bounds
         if self.bounds is not None:
             if self.custom_init:
-                population_parameters = []
+                new_population_parameters = []
                 for i in range(self.population_size):
-                    population_parameters.append(self.initialise_population_paremeters(True if i == 0 else False))
+                    new_population_parameters.append(self.mergeUniform(self.initialise_population_paremeters(True if i == 0 else False), population_parameters[i]))
+                for i in range(len(population_parameters)):
+                    population_parameters[i] = new_population_parameters[i]
+                print(population_parameters)
             else:
                 oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
                 if self.repair == Repair.RANDOM_REPAIR:
@@ -230,3 +233,14 @@ class EvoPy:
             print()
 
         return np.array(genotype)
+
+    def mergeUniform(self, templateGenotype, randomGenotype):
+        length = len(templateGenotype)
+        randomizer = np.random.randint(2, size=length)
+        merged = []
+        for i in range(length):
+            if randomizer[i] == 1:
+                merged.append(templateGenotype[i])
+            else:
+                merged.append(randomGenotype[i])
+        return merged
