@@ -159,16 +159,16 @@ class EvoPy:
                 population_parameters[i] = new_population_parameters[i]
         # Make sure parameters are within bounds
         if self.bounds is not None:
-            oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-            if self.repair == Repair.RANDOM_REPAIR:
-                population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-            elif self.repair == Repair.BOUNDARY_REPAIR:
-                dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
-                dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
-                take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
-                take_right_bound = np.logical_not(take_left_bound)
-                new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
-                population_parameters[oob_indices] = new_oob_values
+                oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
+                if self.repair == Repair.RANDOM_REPAIR:
+                    population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+                elif self.repair == Repair.BOUNDARY_REPAIR:
+                    dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+                    dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+                    take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+                    take_right_bound = np.logical_not(take_left_bound)
+                    new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+                    population_parameters[oob_indices] = new_oob_values
        
         return [
             Individual(
