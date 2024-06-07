@@ -47,7 +47,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True, save_file="", dumb_version=False):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -58,6 +58,9 @@ class CirclesInASquare:
         self.data = []
         self.save_file = save_file
         self.dumb_version = dumb_version
+        self.population_size = population_size
+        self.num_children = num_children
+        self.strategy = strategy
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -144,7 +147,10 @@ class CirclesInASquare:
             max_evaluations=1e5,
             repair=Repair.BOUNDARY_REPAIR,
             custom_init=True,
-            dumb_version = self.dumb_version
+            dumb_version = self.dumb_version,
+            population_size=self.population_size,
+            num_children=self.num_children,
+            strategy=self.strategy
         )
 
         best_solution = evopy.run()
@@ -158,7 +164,8 @@ class CirclesInASquare:
             # Use pickle to dump the list into the file
                 pickle.dump(self.data, file)
 
-        if self.plot_performance:
+        final_best = 0
+        if self.plot_performance or self.save_file != "":
             generations = []
             best_fitness = []
             avg_fitness = []
