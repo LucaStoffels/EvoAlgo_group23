@@ -139,7 +139,7 @@ class CirclesInASquare:
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
-            repair=Repair.CONSTRAINT_DOMINATION,
+            repair=Repair.BOUNDARY_REPAIR,
             custom_init=True
         )
 
