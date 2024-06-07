@@ -5,18 +5,18 @@ import copy
 params = {
     'population_size': {
         'step':5,
-        'lb':5,
+        'lb':30,
         'ub':100
     },
     'num_children':{
         'step':1,
         'lb':1,
-        'ub':10
+        'ub':1
     },
     'strategy':{
         'step':1,
         'lb':1,
-        'ub':3
+        'ub':1
     }
 }
 
@@ -53,8 +53,10 @@ def tune_params(param_index, param_vals):
 
 def evaluate_params(param_vals):
     diff = 0
-    for circles in range(10, 12):
+    for circles in range(2, 5):
         solver = CirclesInASquare(circles, output_statistics=False, **param_vals)
+        print(solver.get_target())
+        print(solver.run_evolution_strategies())
         diff += solver.get_target() - solver.run_evolution_strategies()
     return diff
 
