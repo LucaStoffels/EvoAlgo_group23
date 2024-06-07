@@ -1,5 +1,6 @@
 """Module used for the execution of the evolutionary algorithm."""
 from ast import If
+from imp import init_builtin
 import time
 import math
 import numpy as np
@@ -10,6 +11,7 @@ from evopy.strategy import Strategy
 from evopy.repair import Repair
 from evopy.utils import random_with_seed
 from functools import cmp_to_key
+import random
 
 
 class EvoPy:
@@ -19,7 +21,7 @@ class EvoPy:
                  population_size=30, num_children=1, mean=0, std=1, maximize=False,
                  strategy=Strategy.SINGLE_VARIANCE, random_seed=None, reporter=None,
                  target_fitness_value=None, target_tolerance=1e-5, max_run_time=None,
-                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True):
+                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True, init_alg="complex", init_mutation="random"):
         """Initializes an EvoPy instance.
 
         :param fitness_function: the fitness function on which the individuals are evaluated
@@ -62,6 +64,8 @@ class EvoPy:
         self.bounds = bounds
         self.evaluations = 0
         self.custom_init = custom_init
+        self.init_alg= init_alg
+        self.init_mutation = init_mutation
 
     def _check_early_stop(self, start_time, best):
         """Check whether the algorithm can stop early, based on time and fitness target.
@@ -144,11 +148,7 @@ class EvoPy:
         ])
 
         if self.custom_init:
-            new_population_parameters = []
-            for i in range(self.population_size):
-                new_population_parameters.append(self.mergeUniform(self.initialise_population_paremeters(True if i == 0 else False), population_parameters[i]))
-            for i in range(len(population_parameters)):
-                population_parameters[i] = new_population_parameters[i]
+            population_parameters = self.initialise_population_paremeters(population_parameters, True);
         # Make sure parameters are within bounds
         if self.bounds is not None:
                 oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
@@ -176,7 +176,70 @@ class EvoPy:
             ) for parameters in population_parameters
         ]
 
-    def initialise_population_paremeters(self, debug=False):
+    def initialise_population_paremeters(self, randomized_parameters, debug=False):
+        population_parameters = []
+        for i in range(self.population_size):    
+            if self.init_alg == "complex":
+                population_parameters.append(self.template_Complex(debug if i == 0 else False))
+            elif self.init_alg == "ring":
+                population_parameters.append(self.template_Ring(debug if i == 0 else False))
+            else:
+                print("No init algorithm was given for the population initialisation. Defaulting to \"Ring\"")
+                population_parameters.append(self.template_Ring(debug if i == 0 else False))
+        
+        for i in range(self.population_size):
+            if self.init_mutation == "scale":
+                population_parameters[i] = self.mutate_scale(population_parameters[i])
+            if self.init_mutation == "random":
+                population_parameters[i] = self.mergeUniform(population_parameters[i], randomized_parameters[i])
+            else:
+                print("No init mutation algorithm was given for the population initialisation. Not mutation")
+        return np.array( population_parameters)
+
+    def mergeUniform(self, templateGenotype, randomGenotype):
+        length = len(templateGenotype)
+        randomizer = np.random.randint(2, size=length)
+        merged = []
+        for i in range(length):
+            if randomizer[i] == 1:
+                merged.append(templateGenotype[i])
+            else:
+                merged.append(randomGenotype[i])
+        return np.array(merged)
+
+    def mutate_scale(self, templateGenotype):
+        for i in range(len(templateGenotype)):
+            randomizer = random.randint(-15,15)/10;
+            new_value = templateGenotype[i]*randomizer
+            if new_value < -1:
+                new_value= -1
+            if new_value > 1:
+                new_value = 1
+            templateGenotype[i] = new_value;
+        return np.array(templateGenotype)
+
+
+    def template_Ring(self, debug=False):
+        genotype = []
+        scale_factor = 0.35
+        nr_points = int(self.individual_length/2)
+        if(nr_points > 0):
+            circle_step = (2*math.pi)/nr_points;
+            for i in range(nr_points):
+                x = 0.5+math.sin(i*circle_step) * scale_factor;
+                y = 0.5+math.cos(i*circle_step) * scale_factor;
+                genotype.append(x)
+                genotype.append(y)
+
+        if(debug):
+            print()
+            print("Starting Grid Generation - Cirlce")
+            print(" * circle_step: " + str(circle_step))
+            print(" * circle_step: " + str(scale_factor))
+
+        return np.array(genotype)
+
+    def template_Complex(self, debug=False):
         genotype = []
 
         nr_points_in_square = int(self.individual_length/2)
@@ -223,7 +286,7 @@ class EvoPy:
         
         if(debug):
             print()
-            print("Starting Grid Generation")
+            print("Starting Grid Generation - Complex")
             print(" * Nr circles in square pattern: " + str(nr_points_in_square))
             print(" * Nr circles in circle pattern: " + str(nr_points_in_circle))
             print(" * Nr circles in square pattern: " + str(nr_points_in_center))
@@ -231,14 +294,3 @@ class EvoPy:
             print()
 
         return np.array(genotype)
-
-    def mergeUniform(self, templateGenotype, randomGenotype):
-        length = len(templateGenotype)
-        randomizer = np.random.randint(2, size=length)
-        merged = []
-        for i in range(length):
-            if randomizer[i] == 1:
-                merged.append(templateGenotype[i])
-            else:
-                merged.append(randomGenotype[i])
-        return merged

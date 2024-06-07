@@ -140,7 +140,9 @@ class CirclesInASquare:
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
             repair=Repair.BOUNDARY_REPAIR,
-            custom_init=True
+            custom_init=True,
+            init_alg="ring", # "ring" or "complex"
+            init_mutation="scale" # "random" or "scale"
         )
 
         best_solution = evopy.run()
