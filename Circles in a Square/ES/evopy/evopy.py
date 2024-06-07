@@ -19,7 +19,7 @@ class EvoPy:
                  population_size=30, num_children=1, mean=0, std=1, maximize=False,
                  strategy=Strategy.SINGLE_VARIANCE, random_seed=None, reporter=None,
                  target_fitness_value=None, target_tolerance=1e-5, max_run_time=None,
-                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True):
+                 max_evaluations=None, bounds=None, repair = Repair.RANDOM_REPAIR, custom_init=True, dumb_version=False):
         """Initializes an EvoPy instance.
 
         :param fitness_function: the fitness function on which the individuals are evaluated
@@ -62,6 +62,10 @@ class EvoPy:
         self.bounds = bounds
         self.evaluations = 0
         self.custom_init = custom_init
+        self.dumb_version = dumb_version
+        if self.dumb_version:
+            self.custom_init = False
+            self.repair = Repair.RANDOM_REPAIR
 
     def _check_early_stop(self, start_time, best):
         """Check whether the algorithm can stop early, based on time and fitness target.
@@ -109,11 +113,15 @@ class EvoPy:
             children = [parent.reproduce() for _ in range(self.num_children)
                         for parent in population]
             if not self.repair == Repair.CONSTRAINT_DOMINATION:
-                population = sorted(children + population, reverse=self.maximize,
+                if self.dumb_version:
+                    population = sorted(children, reverse=self.maximize,
+                                    key=lambda individual: individual.evaluate(self.fitness_function))
+                else:
+                    population = sorted(children + population, reverse=self.maximize,
                                     key=lambda individual: individual.evaluate(self.fitness_function))
             else:
                 population = sorted(children + population, reverse=self.maximize,
-                                    key=cmp_to_key(self.cd_comparison))
+                                        key=cmp_to_key(self.cd_comparison))
             self.evaluations += len(population)
             population = population[:self.population_size]
             best = population[0]
@@ -143,26 +151,24 @@ class EvoPy:
             for _ in range(self.population_size)
         ])
 
+        if self.custom_init:
+            new_population_parameters = []
+            for i in range(self.population_size):
+                new_population_parameters.append(self.mergeUniform(self.initialise_population_paremeters(True if i == 0 else False), population_parameters[i]))
+            for i in range(len(population_parameters)):
+                population_parameters[i] = new_population_parameters[i]
         # Make sure parameters are within bounds
         if self.bounds is not None:
-            if self.custom_init:
-                new_population_parameters = []
-                for i in range(self.population_size):
-                    new_population_parameters.append(self.mergeUniform(self.initialise_population_paremeters(True if i == 0 else False), population_parameters[i]))
-                for i in range(len(population_parameters)):
-                    population_parameters[i] = new_population_parameters[i]
-                print(population_parameters)
-            else:
-                oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
-                if self.repair == Repair.RANDOM_REPAIR:
-                    population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
-                elif self.repair == Repair.BOUNDARY_REPAIR:
-                    dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
-                    dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
-                    take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
-                    take_right_bound = np.logical_not(take_left_bound)
-                    new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
-                    population_parameters[oob_indices] = new_oob_values
+            oob_indices = (population_parameters < self.bounds[0]) | (population_parameters > self.bounds[1])
+            if self.repair == Repair.RANDOM_REPAIR:
+                population_parameters[oob_indices] = self.random.uniform(self.bounds[0], self.bounds[1], size=np.count_nonzero(oob_indices))
+            elif self.repair == Repair.BOUNDARY_REPAIR:
+                dist_from_left_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[0])))
+                dist_from_right_bound = np.absolute(np.subtract(population_parameters, np.full(population_parameters.shape, self.bounds[1])))
+                take_left_bound = dist_from_left_bound[oob_indices] < dist_from_right_bound[oob_indices]
+                take_right_bound = np.logical_not(take_left_bound)
+                new_oob_values = np.add(np.multiply(take_left_bound, self.bounds[0]), np.multiply(take_right_bound, self.bounds[1]))
+                population_parameters[oob_indices] = new_oob_values
        
         return [
             Individual(

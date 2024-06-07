@@ -8,6 +8,7 @@ from evopy.repair import Repair
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 ###########################################################
 #                                                         #
@@ -46,7 +47,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True, save_file="", dumb_version=False):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -55,6 +56,8 @@ class CirclesInASquare:
         self.ax = None
         self.plot_performance = plot_performance
         self.data = []
+        self.save_file = save_file
+        self.dumb_version = dumb_version
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -89,7 +92,7 @@ class CirclesInASquare:
             output += " ({:s})".format(np.array2string(report.best_genotype))
         print(output)
 
-        if self.plot_performance:
+        if self.plot_performance or self.save_file != "":
             self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness))
 
         if self.plot_best_sol:
@@ -139,8 +142,9 @@ class CirclesInASquare:
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
-            repair=Repair.CONSTRAINT_DOMINATION,
-            custom_init=True
+            repair=Repair.BOUNDARY_REPAIR,
+            custom_init=True,
+            dumb_version = self.dumb_version
         )
 
         best_solution = evopy.run()
@@ -148,6 +152,11 @@ class CirclesInASquare:
         if self.plot_best_sol:
              #plt.close()
             pass
+        
+        if self.save_file != "":
+            with open(self.save_file, 'wb') as file:
+            # Use pickle to dump the list into the file
+                pickle.dump(self.data, file)
 
         if self.plot_performance:
             generations = []
