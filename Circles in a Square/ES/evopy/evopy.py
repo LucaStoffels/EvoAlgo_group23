@@ -1,6 +1,4 @@
 """Module used for the execution of the evolutionary algorithm."""
-from ast import If
-from imp import init_builtin
 import time
 import math
 import numpy as np
