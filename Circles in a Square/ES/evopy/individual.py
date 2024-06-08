@@ -67,13 +67,7 @@ class Individual:
         :param fitness_function: the fitness function to evaluate the individual with
         :return: the value of the fitness function using the individuals genotype
         """
-        if self.repair == Repair.CONSTRAINT_DOMINATION:
-            if self.bounds != None:
-                self.fitness = fitness_function(self.genotype) - self.constraint_violation
-            else:
-                self.fitness = fitness_function(self.genotype)
-        else:  
-            self.fitness = fitness_function(self.genotype)
+        self.fitness = fitness_function(self.genotype)
 
         return self.fitness
 
