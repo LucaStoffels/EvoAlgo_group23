@@ -6,7 +6,7 @@ import pickle
 params = {
     'population_size': {
         'step':5,
-        'lb':30,
+        'lb':20,
         'ub':100
     },
     'num_children':{
@@ -23,11 +23,15 @@ params = {
 
 ordered_params = ['population_size', 'num_children', 'strategy']
 
+best_config = {
+        'val': 100,
+        'params': {}
+    }
+
 def tune_params(param_index, param_vals):
+    global best_config
     if param_index >= len(ordered_params):
         best_fit = evaluate_params(param_vals)
-        print("Evaluating:",param_vals)
-        print("Result:", best_fit)
         return {
             'val': best_fit,
             'params': param_vals
@@ -49,19 +53,23 @@ def tune_params(param_index, param_vals):
                 'val': best_params['val'],
                 'params': best_params['params'].copy()
             }
+        if best_params['val'] < best_config['val']:
+            best_config = {
+                'val': best_params['val'],
+                'params': best_params['params'].copy()
+            }
             print("NEW BEST CONFIG: ", curr_best)
     return best_params
 
 def evaluate_params(param_vals):
     diff = 0
-    for circles in range(2, 5):
-        runner = CirclesInASquare(circles, save_file="temp_smart.pkl", plot_performance=False, dumb_version=False,output_statistics=False, **param_vals)
+    for circles in range(2, 10):
+        runner = CirclesInASquare(circles, save_file="temp_smart.pkl", plot_performance=False, dumb_version=False, **param_vals)
         runner.run_evolution_strategies()
         with open('temp_smart.pkl', 'rb') as file:
             loaded_data = pickle.load(file)
         best_fitness = 0
         for gen, best, avg, std in loaded_data:
-            print("Best", best)
             best_fitness = max(best_fitness, best)
         
         diff += runner.get_target() - best_fitness

@@ -11,7 +11,7 @@ def run_experiments(num_circles=10, times=10, plot_name="plot"):
     
     for i in range(times):
         # Smart version
-        runner = CirclesInASquare(num_circles, save_file="temp_smart.pkl", plot_performance=False, dumb_version=False)
+        runner = CirclesInASquare(num_circles, save_file="temp_smart.pkl", plot_performance=False, dumb_version=False, population_size=20, num_children=7)
         baseline_value = runner.get_target()
         runner.run_evolution_strategies()
         with open('temp_smart.pkl', 'rb') as file:
