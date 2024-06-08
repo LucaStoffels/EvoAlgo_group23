@@ -229,14 +229,14 @@ class EvoPy:
             genotype.append(x)
             genotype.append(y)
         
-        # if(debug):
-        #     print()
-        #     print("Starting Grid Generation")
-        #     print(" * Nr circles in square pattern: " + str(nr_points_in_square))
-        #     print(" * Nr circles in circle pattern: " + str(nr_points_in_circle))
-        #     print(" * Nr circles in square pattern: " + str(nr_points_in_center))
-        #     print(" * Square size: " + str(square_size))
-        #     print()
+        if(debug):
+            print()
+            print("Starting Grid Generation")
+            print(" * Nr circles in square pattern: " + str(nr_points_in_square))
+            print(" * Nr circles in circle pattern: " + str(nr_points_in_circle))
+            print(" * Nr circles in square pattern: " + str(nr_points_in_center))
+            print(" * Square size: " + str(square_size))
+            print()
 
         return np.array(genotype)
 
