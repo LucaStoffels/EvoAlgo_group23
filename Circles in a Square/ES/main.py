@@ -135,7 +135,7 @@ class CirclesInASquare:
             self.n_circles * 2,  # Number of parameters
             reporter=callback,  # Prints statistics at each generation
             maximize=True,
-            generations=10,
+            generations=1000,
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,

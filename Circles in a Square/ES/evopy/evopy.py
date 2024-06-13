@@ -106,8 +106,6 @@ class EvoPy:
         population = self._init_population()
         best = sorted(population, reverse=self.maximize,
                       key=lambda individual: individual.evaluate(self.fitness_function))[0]
-        self.reporter(ProgressReport(0, self.evaluations, best.genotype, best.fitness, 0, 0))
-        return best.genotype
 
         for generation in range(self.generations):
             children = [parent.reproduce() for _ in range(self.num_children)
