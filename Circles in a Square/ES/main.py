@@ -46,7 +46,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=True, print_sols=False, plot_performance=True):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -135,7 +135,7 @@ class CirclesInASquare:
             self.n_circles * 2,  # Number of parameters
             reporter=callback,  # Prints statistics at each generation
             maximize=True,
-            generations=1000,
+            generations=10,
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
@@ -176,7 +176,7 @@ class CirclesInASquare:
         return best_solution
 
 
-if __name__ == "__main__":
+if __name__ =="__main__":
     circles = 10
     runner = CirclesInASquare(circles, plot_performance=True)
     best = runner.run_evolution_strategies()

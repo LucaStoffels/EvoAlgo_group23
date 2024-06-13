@@ -106,6 +106,8 @@ class EvoPy:
         population = self._init_population()
         best = sorted(population, reverse=self.maximize,
                       key=lambda individual: individual.evaluate(self.fitness_function))[0]
+        self.reporter(ProgressReport(0, self.evaluations, best.genotype, best.fitness, 0, 0))
+        return best.genotype
 
         for generation in range(self.generations):
             children = [parent.reproduce() for _ in range(self.num_children)
@@ -191,7 +193,7 @@ class EvoPy:
             elif self.init_mutation == "random":
                 population_parameters[i] = self.mergeUniform(population_parameters[i], randomized_parameters[i])
             else:
-                print("No init mutation algorithm was given for the population initialisation. Not mutation")
+                print("No init mutation algorithm was given for the population initialisation. No mutation")
         return np.array( population_parameters)
 
     def mergeUniform(self, templateGenotype, randomGenotype):
@@ -207,7 +209,13 @@ class EvoPy:
 
     def mutate_scale(self, templateGenotype):
         for i in range(len(templateGenotype)):
-            randomizer = random.randint(-15,15)/10;
+            randomizer1 = random.randint(-15,15)/10;
+            randomizer2 = random.randint(8,12)/10;
+            randomizer = 1
+            if random.randint(0,2) == 0:
+                randomizer = randomizer1
+            else:
+                randomizer = randomizer2
             new_value = ((templateGenotype[i] - 0.5)*randomizer) + 0.5;
             if new_value < 0:
                 new_value= 0
@@ -251,21 +259,27 @@ class EvoPy:
         square_size = int(math.sqrt(nr_points_in_square))
 
         nr_points_in_center = 0;
-        if  nr_points_in_circle > 1 and math.sqrt(nr_points_in_square) % 2 == 0:
+        if  nr_points_in_circle >= 1 and square_size % 2 == 0:
             nr_points_in_center = 1;
             nr_points_in_circle -= 1;
             
+        
         square_factor = 0.9
         square_stepsize = 0
-        if square_factor > 1:
+        if square_size > 1:
             square_stepsize = square_factor/(square_size-1)
-
-        for i in range(square_size):
-            for j in range(square_size):
-                x = ((1-square_factor)/2) + (j)*square_stepsize;
-                y = ((1-square_factor)/2) + (i)*square_stepsize;
-                genotype.append(x)
-                genotype.append(y)
+        else:
+            square_stepsize = 0.5
+        if square_size > 1:
+            for i in range(square_size):
+                for j in range(square_size):
+                    x = ((1-square_factor)/2) + (j)*square_stepsize;
+                    y = ((1-square_factor)/2) + (i)*square_stepsize;
+                    genotype.append(x)
+                    genotype.append(y)
+        else:
+            nr_points_in_circle += nr_points_in_square
+            nr_points_in_square = 0;
                 
         if(nr_points_in_circle > 0):
             circle_step = (2*math.pi)/nr_points_in_circle;
