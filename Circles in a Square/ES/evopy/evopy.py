@@ -188,7 +188,7 @@ class EvoPy:
         for i in range(self.population_size):
             if self.init_mutation == "scale":
                 population_parameters[i] = self.mutate_scale(population_parameters[i])
-            if self.init_mutation == "random":
+            elif self.init_mutation == "random":
                 population_parameters[i] = self.mergeUniform(population_parameters[i], randomized_parameters[i])
             else:
                 print("No init mutation algorithm was given for the population initialisation. Not mutation")
