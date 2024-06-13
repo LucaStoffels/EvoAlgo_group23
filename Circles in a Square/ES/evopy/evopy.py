@@ -208,9 +208,9 @@ class EvoPy:
     def mutate_scale(self, templateGenotype):
         for i in range(len(templateGenotype)):
             randomizer = random.randint(-15,15)/10;
-            new_value = templateGenotype[i]*randomizer
-            if new_value < -1:
-                new_value= -1
+            new_value = ((templateGenotype[i] - 0.5)*randomizer) + 0.5;
+            if new_value < 0:
+                new_value= 0
             if new_value > 1:
                 new_value = 1
             templateGenotype[i] = new_value;
