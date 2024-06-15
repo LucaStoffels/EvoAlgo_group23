@@ -115,12 +115,8 @@ class EvoPy:
             children = [parent.reproduce() for _ in range(self.num_children)
                         for parent in population]
             if not self.repair == Repair.CONSTRAINT_DOMINATION:
-                if self.dumb_version:
-                    population = sorted(children, reverse=self.maximize,
-                                    key=lambda individual: individual.evaluate(self.fitness_function))
-                else:
-                    population = sorted(children + population, reverse=self.maximize,
-                                    key=lambda individual: individual.evaluate(self.fitness_function))
+                population = sorted(children + population, reverse=self.maximize,
+                                key=lambda individual: individual.evaluate(self.fitness_function))
             else:
                 population = sorted(children + population, reverse=self.maximize,
                                         key=cmp_to_key(self.cd_comparison))
