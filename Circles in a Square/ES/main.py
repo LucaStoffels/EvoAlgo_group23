@@ -47,7 +47,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False, init_mutation="scale", init_alg="scale", repair=Repair.RANDOM_REPAIR):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -61,6 +61,9 @@ class CirclesInASquare:
         self.population_size = population_size
         self.num_children = num_children
         self.strategy = strategy
+        self.init_alg = init_alg
+        self.init_mutation = init_mutation
+        self.repair = repair
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -145,14 +148,14 @@ class CirclesInASquare:
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
-            repair=Repair.BOUNDARY_REPAIR,
+            repair=self.repair,
             custom_init=True,
             dumb_version = self.dumb_version,
             population_size=self.population_size,
             num_children=self.num_children,
-            strategy=self.strategy
-            init_alg="ring", # "ring" or "complex"
-            init_mutation="scale" # "random" or "scale"
+            strategy=self.strategy,
+            init_alg=self.init_alg, # "ring" or "complex"
+            init_mutation=self.init_mutation # "random" or "scale"
         )
 
         best_solution = evopy.run()
@@ -178,7 +181,8 @@ class CirclesInASquare:
                 best_fitness.append(best)
                 avg_fitness.append(avg)
                 std_fitness.append(std)
-
+            
+        if self.plot_performance:
             plt.xlabel("Generations")
 
             target = [self.get_target()] * len(generations)
