@@ -151,6 +151,8 @@ class CirclesInASquare:
             population_size=self.population_size,
             num_children=self.num_children,
             strategy=self.strategy
+            init_alg="ring", # "ring" or "complex"
+            init_mutation="scale" # "random" or "scale"
         )
 
         best_solution = evopy.run()
@@ -190,7 +192,7 @@ class CirclesInASquare:
         return best_solution
 
 
-if __name__ == "__main__":
+if __name__ =="__main__":
     circles = 10
     runner = CirclesInASquare(circles, plot_performance=True)
     best = runner.run_evolution_strategies()

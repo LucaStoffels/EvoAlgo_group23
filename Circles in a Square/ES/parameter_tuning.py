@@ -1,3 +1,4 @@
+from ES.evopy.repair import Repair
 from main import CirclesInASquare
 from evopy.strategy import Strategy
 import copy
@@ -46,7 +47,7 @@ def tune_params(param_index, param_vals):
         param_vals_temp = copy.deepcopy(param_vals) 
         param_vals_temp[param_name] = pv
         if param_name == "strategy":
-            param_vals_temp[param_name] = Strategy(pv)
+            param_vals_temp[param_name] = Repair(pv)
         best_params = tune_params(param_index + 1, param_vals_temp)
         if best_params['val'] < curr_best['val']:
             curr_best = {
