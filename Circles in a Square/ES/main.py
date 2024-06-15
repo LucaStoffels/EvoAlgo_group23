@@ -47,7 +47,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False, init_mutation="scale", init_alg="scale", repair=Repair.RANDOM_REPAIR):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False, init_mutation="scale", init_alg="scale", repair=Repair.RANDOM_REPAIR, custom_init=True):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -64,6 +64,7 @@ class CirclesInASquare:
         self.init_alg = init_alg
         self.init_mutation = init_mutation
         self.repair = repair
+        self.custom_init = custom_init
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -99,7 +100,7 @@ class CirclesInASquare:
         print(output)
 
         if self.plot_performance or self.save_file != "":
-            self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness))
+            self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness, report.evaluations))
 
         if self.plot_best_sol:
             points = np.reshape(report.best_genotype, (-1, 2))
@@ -149,7 +150,7 @@ class CirclesInASquare:
             target_fitness_value=self.get_target(),
             max_evaluations=1e5,
             repair=self.repair,
-            custom_init=True,
+            custom_init=self.custom_init,
             dumb_version = self.dumb_version,
             population_size=self.population_size,
             num_children=self.num_children,
@@ -175,12 +176,14 @@ class CirclesInASquare:
             best_fitness = []
             avg_fitness = []
             std_fitness = []
+            evaluations = []
             for datapoint in self.data:
-                gen, best, avg, std = datapoint
+                gen, best, avg, std, evals = datapoint
                 generations.append(gen)
                 best_fitness.append(best)
                 avg_fitness.append(avg)
                 std_fitness.append(std)
+                evaluations.append(evals)
             
         if self.plot_performance:
             plt.xlabel("Generations")
