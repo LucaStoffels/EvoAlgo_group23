@@ -148,7 +148,7 @@ class CirclesInASquare:
             generations=1000,
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
-            max_evaluations=1e5,
+            max_evaluations=0.6e5,
             repair=self.repair,
             custom_init=self.custom_init,
             dumb_version = self.dumb_version,
