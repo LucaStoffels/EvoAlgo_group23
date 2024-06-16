@@ -1,2 +1,6 @@
 **/__pycache__/
 .vs/*
+temp_dumb.pkl
+temp_smart.pkl
+temp_*
+experiments/

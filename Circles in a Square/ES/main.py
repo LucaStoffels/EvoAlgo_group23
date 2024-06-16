@@ -8,6 +8,7 @@ from evopy.repair import Repair
 from sklearn.metrics.pairwise import euclidean_distances
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 ###########################################################
 #                                                         #
@@ -46,7 +47,7 @@ def circles_in_a_square(individual):
 
 
 class CirclesInASquare:
-    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=True):
+    def __init__(self, n_circles, output_statistics=True, plot_sols=False, print_sols=False, plot_performance=False, population_size=30, num_children=1, strategy=Strategy.SINGLE_VARIANCE, save_file="", dumb_version=False, init_mutation="scale", init_alg="scale", repair=Repair.RANDOM_REPAIR, custom_init=True):
         self.print_sols = print_sols
         self.output_statistics = output_statistics
         self.plot_best_sol = plot_sols
@@ -55,6 +56,15 @@ class CirclesInASquare:
         self.ax = None
         self.plot_performance = plot_performance
         self.data = []
+        self.save_file = save_file
+        self.dumb_version = dumb_version
+        self.population_size = population_size
+        self.num_children = num_children
+        self.strategy = strategy
+        self.init_alg = init_alg
+        self.init_mutation = init_mutation
+        self.repair = repair
+        self.custom_init = custom_init
         assert 2 <= n_circles <= 20
 
         if not output_statistics and plot_performance:
@@ -89,8 +99,8 @@ class CirclesInASquare:
             output += " ({:s})".format(np.array2string(report.best_genotype))
         print(output)
 
-        if self.plot_performance:
-            self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness))
+        if self.plot_performance or self.save_file != "":
+            self.data.append((report.generation, report.best_fitness, report.avg_fitness, report.std_fitness, report.evaluations))
 
         if self.plot_best_sol:
             points = np.reshape(report.best_genotype, (-1, 2))
@@ -138,9 +148,15 @@ class CirclesInASquare:
             generations=1000,
             bounds=(0, 1),
             target_fitness_value=self.get_target(),
-            max_evaluations=1e5,
-            repair=Repair.BOUNDARY_REPAIR,
-            custom_init=True
+            max_evaluations=0.6e5,
+            repair=self.repair,
+            custom_init=self.custom_init,
+            dumb_version = self.dumb_version,
+            population_size=self.population_size,
+            num_children=self.num_children,
+            strategy=self.strategy,
+            init_alg=self.init_alg, # "ring" or "complex"
+            init_mutation=self.init_mutation # "random" or "scale"
         )
 
         best_solution = evopy.run()
@@ -148,19 +164,28 @@ class CirclesInASquare:
         if self.plot_best_sol:
              #plt.close()
             pass
+        
+        if self.save_file != "":
+            with open(self.save_file, 'wb') as file:
+            # Use pickle to dump the list into the file
+                pickle.dump(self.data, file)
 
-        if self.plot_performance:
+        final_best = 0
+        if self.plot_performance or self.save_file != "":
             generations = []
             best_fitness = []
             avg_fitness = []
             std_fitness = []
+            evaluations = []
             for datapoint in self.data:
-                gen, best, avg, std = datapoint
+                gen, best, avg, std, evals = datapoint
                 generations.append(gen)
                 best_fitness.append(best)
                 avg_fitness.append(avg)
                 std_fitness.append(std)
-
+                evaluations.append(evals)
+            
+        if self.plot_performance:
             plt.xlabel("Generations")
 
             target = [self.get_target()] * len(generations)
@@ -174,7 +199,7 @@ class CirclesInASquare:
         return best_solution
 
 
-if __name__ == "__main__":
+if __name__ =="__main__":
     circles = 10
     runner = CirclesInASquare(circles, plot_performance=True)
     best = runner.run_evolution_strategies()
